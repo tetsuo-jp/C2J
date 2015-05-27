@@ -23,25 +23,21 @@
 
 ////////////////////////////////   See README file  //////////////////////////
 
-#include <fstream.h>
-#include <iostream.h>
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <iostream>
+using namespace std;
 
 #include "parser.hpp"
 
-const char *PACKAGE= "SomePackage";	// change this to your package name
-const char *AUTHOR=  "SomeBody";	// change this to your name
+std::string PACKAGE= "SomePackage";	// change this to your package name
+std::string AUTHOR=  "SomeBody";	// change this to your name
 const char *COMPANY= "SomeCompany";	// change this to your company
 
-int debug = 0;
+int debug = 1;
 
-char *PUBLIC = "public "; 
-char *PRIVATE = "private "; 
-char *PROTECTED = ""; 
-char *accessor = PROTECTED;
+const char *PUBLIC = "public "; 
+const char *PRIVATE = "private "; 
+const char *PROTECTED = ""; 
+const char *accessor = PROTECTED;
 
 int  putback = 0;		// see getChar()
 char putback_char = 0;		// see getChar()
@@ -113,23 +109,25 @@ void printStack(int depth)
 
 void getClassNameFromStack(char *class_name,  int depth)
 {
+  int n;
   strcpy(class_name,  "");
-  for (int n=depth; n<MAXWORDSTACKSIZE-depth-2; n+=3) {
+  for (n=depth; n<MAXWORDSTACKSIZE-depth-2; n+=3) {
       if (strneq(wordStack[MAXWORDSTACKSIZE-(n+1)], ":") ||
 			strneq(wordStack[MAXWORDSTACKSIZE-(n+2)], ":")) 
 	break;
   }
   if (debug) printStack(n);
-  for (n; n>depth; n-=3)
+  for (; n>depth; n-=3)
       strcat(class_name,  wordStack[MAXWORDSTACKSIZE-n]);
   strcat(class_name,  wordStack[MAXWORDSTACKSIZE-depth]);
 }
 
 int getWord(char *buf_, int bufsize_)
 {
+  int n;
   skipSpaces();
 
-  for (int n=0; n<bufsize_ && !cin.eof(); n++) {
+  for (n=0; n<bufsize_ && !cin.eof(); n++) {
     if (n<bufsize_) buf_[n] = getChar();
 
     if (buf_[n] == '/') { 				// skip comments
@@ -192,7 +190,8 @@ int getWord(char *buf_, int bufsize_)
   }
   if (n>0) ungetChar(buf_[n--]);
   buf_[n+1] = '\0';
-  for (int i=0; i<MAXWORDSTACKSIZE-1; i++)
+  int i;
+  for (i=0; i<MAXWORDSTACKSIZE-1; i++)
 	strcpy(wordStack[i], wordStack[i+1]);
   strcpy(wordStack[i], buf_);
   return cin.eof() ? EOF : n+1;
@@ -214,7 +213,7 @@ int findWord(char *word_to_find)
   return 1;
 }  
 
-int findAndDoNotSkipWord(char *word_to_find, char *dont_skip)
+int findAndDoNotSkipWord(const char *word_to_find, const char *dont_skip)
 {
   if (debug) cerr << "findAndDoNotSkipWord(" << word_to_find << 
 					"," << dont_skip << ")\n";
@@ -227,7 +226,7 @@ int findAndDoNotSkipWord(char *word_to_find, char *dont_skip)
   return 1;
 }  
 
-int skipMatching(char *word_to_skip, char *word_to_find)
+int skipMatching(const char *word_to_skip, const char *word_to_find)
 {
   if (debug) cerr << "skipMatching(" << word_to_skip << 
 					"," << word_to_find << ") {\n";
@@ -241,7 +240,7 @@ int skipMatching(char *word_to_skip, char *word_to_find)
   if (debug) cerr << "}" << "\n";
   return 1;
 }  
-char *MemberTypeNames[] = {
+const char *MemberTypeNames[] = {
   "Variable", "Enum", "Array", "Method", "InlinedMethod", 
   "Constructor", "InlinedConstructor", 
   "Destructor", "InlinedDestructor", 
@@ -308,7 +307,7 @@ void ClassRepresentation::print() {
   printf(" * For information about c2j, send mail to laffra@ms.com\n");
   printf(" * \n");
   printf(" * Copyright 1995/1996, %s%s" , COMPANY,  " All rights reserved\n");
-  printf(" * @author %s%s", AUTHOR, "\n");
+  printf(" * @author %s%s", AUTHOR.c_str(), "\n");
   printf(" *commentend/\n");
 
   if (!nested())
@@ -346,7 +345,8 @@ findClass(const char *class_name, int is_super_class)
   static ClassRepresentation *c_cache = 0;
   static char cache_class_name[256];
   if (c_cache && streq(class_name, cache_class_name)) return c_cache;
-  for (ClassRepresentation *c = class_info; c; c = c->next()) 
+  ClassRepresentation *c;
+  for (c = class_info; c; c = c->next()) 
     if (streq(c->name(), class_name)) {
       c_cache = c;
       strcpy(cache_class_name, class_name);
@@ -385,7 +385,7 @@ int readSuperClasses(const char *class_name_)
   return 1;
 }
 
-void readMemberBody(char *class_name_, char *member_name_, char *type_,
+void readMemberBody(char *class_name_, char *member_name_, const char *type_,
 		ParmList **parameters_) 
 {
   char file_name[BUFSIZE];
@@ -752,12 +752,12 @@ ParmList* readParmList()
 
       if (streq(type,",") || streq(type,"(")) {
           type = wordStack[MAXWORDSTACKSIZE-2];
-          name = "";
+          strcpy(name, "");
       }
 
       if (streq(type,":")) {
           type = wordStack[MAXWORDSTACKSIZE-2];
-          name = "";
+          strcpy(name, "");
       }
 
       if (streq(type,"*")) {
@@ -983,7 +983,7 @@ int main(int argc,char **argv)
   if (parse_methods) 
     statics = fopen("__c2j_java__/__statics", "w");
   else 
-    printf("package %s %s", PACKAGE , ";\n");
+    printf("package %s %s", PACKAGE.c_str() , ";\n");
 
   while (readClass()) ;
 

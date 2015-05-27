@@ -1,1 +1,0 @@
-nmake parser.exe

@@ -29,6 +29,8 @@
 ############################################################################## 
 
 BASEDIR=`dirname $0`
+LIBDIR=`dirname $0`/../lib
+SHAREDIR=`dirname $0`/../share
 
 usage() {
 cat <<'EOF'
@@ -90,7 +92,7 @@ for i do
       echo "parsing files \"$h\" and \"$c\""
       echo ""
 
-      if [ ! -f $BASEDIR/parser ]
+      if [ ! -f $LIBDIR/parser ]
       then
 	  echo 
 	  echo "ERROR!!!!"
@@ -111,14 +113,14 @@ for i do
       # in the java class. Each inlined C++ method found in the .H file
       # is saved in the __c2j_java__ directory.
       #
-      sed -f $BASEDIR/sedin0 $h | $BASEDIR/parser  > __c2j_java__/$i.j
+      sed -f $SHAREDIR/sedin0 $h | $LIBDIR/parser  > __c2j_java__/$i.c
 
       #
       # pass two will detect each C++ method in the .C file, and save it
       # in the __c2j_java__ directory.
       #
-      sed -f $BASEDIR/sedin0 $h | $BASEDIR/parser -C > /dev/null
-      sed -f $BASEDIR/sedin0 $c | $BASEDIR/parser -C > /dev/null
+      sed -f $SHAREDIR/sedin0 $h | $LIBDIR/parser -C > /dev/null
+      sed -f $SHAREDIR/sedin0 $c | $LIBDIR/parser -C > /dev/null
 
       #
       # the C preprocessor (-E) will resolve all the #include's and
@@ -128,10 +130,10 @@ for i do
       # sedin1 contains some extra rules for indenting the body of the
       # member functions, for instance.
       # 
-      cc -E __c2j_java__/$i.j 2>__c2j_java__/cc.out | \
-				sed -f $BASEDIR/sedin1 > $i.java 
+      cc -E __c2j_java__/$i.c 2>__c2j_java__/cc.out | \
+				sed -f $SHAREDIR/sedin1 > $i.java
 
-      sed -f $BASEDIR/sedin2 __c2j_java__/cc.out
+      sed -f $SHAREDIR/sedin2 __c2j_java__/cc.out
 
       echo
       echo "c2j: Informational: created file" $i.java
